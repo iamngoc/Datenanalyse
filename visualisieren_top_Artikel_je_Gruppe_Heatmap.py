@@ -6,13 +6,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 
-
-# ==== Konfiguration ====
-
-"""Ändern Sie die Nummer je nachdem, wie viele Top-Produkte es je Gruppe gibt. """
-top_artikels_of_group: Final[int] = 50
-
-
 # ==== Hilfsfunktionen ====
 def ask_for_year() -> int:
     """Fragt den Benutzer nach einem Jahr und gibt es als int zurück."""
@@ -166,3 +159,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
