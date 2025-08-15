@@ -8,7 +8,9 @@ import matplotlib.colors as mcolors
 
 
 # ==== Konfiguration ====
-TOP_PRODUCTS_OF_GROUP: Final[int] = 50
+
+"""Ändern Sie die Nummer je nachdem, wie viele Top-Produkte es je Gruppe gibt. """
+top_artikels_of_group: Final[int] = 50
 
 
 # ==== Hilfsfunktionen ====
@@ -21,6 +23,18 @@ def ask_for_year() -> int:
                 return year
             else:
                 print("Bitte geben Sie ein Jahr zwischen 2000 und 2100 ein.")
+        except ValueError:
+            print("Ungültige Eingabe! Bitte eine ganze Zahl eingeben.")
+
+def ask_for_articles(year: int) -> int:
+    """Fragt den Benutzer nach einer Anzahl der Artikeln und gibt es als int zurück."""
+    while True:
+        try:
+            top_artikels_of_group = int(input("Wie viele Artikel je Gruppe möchten Sie auswerten? "))
+            if 1 <= top_artikels_of_group <= 5000:
+                return top_artikels_of_group
+            else:
+                print("Bitte geben Sie eine Nummer zwischen 1 und 5000 ein.")
         except ValueError:
             print("Ungültige Eingabe! Bitte eine ganze Zahl eingeben.")
 
@@ -135,13 +149,14 @@ def create_heatmaps(df: pd.DataFrame, top_per_group: int, output_dir: Path):
 # ==== Hauptlogik ====
 def main():
     year = ask_for_year()
+    top_artikels_of_group = ask_for_articles(year)
     df = load_data(year)
-    top_per_group = TOP_PRODUCTS_OF_GROUP
+    top_per_group = top_artikels_of_group
     #_ = top_n_preview_by_group(df, group_name="SK", top_n=top_per_group, year=year, save_excel=True)
     output_dir = prepare_output_folder(year)
     check_dir = prepare_checkTop_folder(year)
     _ = top_n_preview_all_groups_multisheet(df,
-                                   top_n=TOP_PRODUCTS_OF_GROUP,
+                                   top_n=top_artikels_of_group,
                                    year=year,
                                    check_dir=check_dir,
                                    save_excel=True)
