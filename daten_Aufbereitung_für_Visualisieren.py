@@ -1,8 +1,32 @@
-from typing import Final
+"""
+Dieses Skript dient der Datenaufbereitung für spätere Visualisierungen von Artikel-Nutzungen.
+
+Ablauf:
+1. Abfrage des Analysejahres vom Benutzer.
+2. Einlesen von Aufträgen und Artikeldaten aus den Excel-Dateien:
+   - auftraege_{year}.xlsx
+   - Artikel_20250624.xlsx
+3. Bereinigung und Vereinheitlichung der Datentypen.
+4. Filterung der Aufträge auf das gewählte Jahr und Ergänzung einer Monats-Spalte.
+5. Verknüpfung der Artikel mit ihren Artikelgruppen sowie den Aufträgen.
+6. Zählung der Artikel-Nutzungen pro Monat und Gruppe.
+7. Export:
+   - Zusammengefuehrte_Datei.xlsx (Rohdaten)
+   - Anzahl_genutzte_Produkte_{year}.xlsx (Auswertung nach Monaten)
+
+Ergebnis:
+Die erzeugten Excel-Dateien bilden die Grundlage für Visualisierungen
+(z. B. Top-N-Analysen oder Heatmaps) und werden in einem Archivordner gespeichert.
+"""
+"""
+BITTE ÄNDERN SIE DIE PFADE FÜR excel_file, artikel_file, path_to_create - ZEILE 53, 54, 55
+
+"""
+
+import os
+
 from pathlib import Path
 import pandas as pd
-import matplotlib.pyplot as plt
-
 
 # ==== Jahr abfragen ====
 def ask_for_year() -> int:
@@ -17,21 +41,35 @@ def ask_for_year() -> int:
         except ValueError:
             print("⚠ Ungültige Eingabe! Bitte eine ganze Zahl eingeben.")
 
-# ==== Benutzerabfrage ====
-YEAR: Final[int] = ask_for_year()
-NUMBER_OF_PRODUCTS: Final[int] = 15
-TOP_PRODUCTS_OF_GROUP: Final[int] = 50
-ARCHIV_DIR = Path("archiv_Excel")
+year = ask_for_year()
 
-EXCEL_FILE = ARCHIV_DIR / f"auftraege_{YEAR}.xlsx"
-ARTIKEL_FILE = ARCHIV_DIR / "Artikel_20250624.xlsx"
+"""
+BITTE ÄNDERN SIE DIE 3 PFADE: excel_file, artikel_file, path_to_create
+excel_file: der Pfad für Excel-Datei "auftraege_2023.xlsx"
+artikel_file: der Pfad für Excel-Datei "Artikel_20250624.xlsx"
+path_to_create: Ordner für aufgebreitete Dateien
+"""
+
+excel_file = f"C:/Users/minhn/Documents/IPH_Praktikum/Aufgabe_Python/given_Excel_datas/auftraege_{year}.xlsx"
+artikel_file = f"C:/Users/minhn/Documents/IPH_Praktikum/Aufgabe_Python/given_Excel_datas/Artikel_20250624.xlsx"
+path_to_create = Path(f"C:/Users/minhn/Documents/IPH_Praktikum/Aufgabe_Python/Archive_Excels_{year}")
+
+def create_archive_dir() -> Path:
+    path = path_to_create
+    try:
+        os.makedirs(path, exist_ok=True)  # exist_ok=True = kein Fehler wenn Ordner schon da
+    except OSError as e:
+        print(f"Fehler beim Erstellen des Ordners: {e}")
+    return path
+
+archive_dir = create_archive_dir()
 
 # ==== Hilfsfunktionen ====
 
 def read_data():
     """Liest Excel-Dateien ein und gibt DataFrames zurück."""
-    sheets = pd.read_excel(EXCEL_FILE, sheet_name=None)
-    artikel_sheet = pd.read_excel(ARTIKEL_FILE)
+    sheets = pd.read_excel(excel_file, sheet_name=None)
+    artikel_sheet = pd.read_excel(artikel_file)
 
     auftraege = sheets['Auftraege'][['AU_Nummer', 'ProduktionsEnde']].copy()
     artikel = sheets['Auftraege_Artikel'][['AU_Nummer', 'ArtikelCode']].copy()
@@ -97,18 +135,9 @@ def count_products_per_month(merged):
     )
 
 
-def top_products_per_month(product_counts, top_n):
-    """Ermittelt Top-N Produkte pro Monat."""
-    return (
-        product_counts
-        .sort_values(["month", "Number of Usages"], ascending=[True, False])
-        .groupby("month")
-        .head(top_n)
-    )
-
 def save_to_excel(df, filename):
     """Speichert DataFrame in Excel-Datei."""
-    df.to_excel(ARCHIV_DIR / filename, index=False)
+    df.to_excel(archive_dir / filename, index=False)
 
 # ==== Hauptlogik ====
 
@@ -117,17 +146,13 @@ def main():
         auftraege, artikel, artikel_gruppe = read_data()
         auftraege, artikel, artikel_gruppe = clean_and_convert(auftraege, artikel, artikel_gruppe)
 
-        auftraege_filted = filter_by_year(auftraege, YEAR)
+        auftraege_filted = filter_by_year(auftraege, year)
         merged_gr = merge_artikel_with_gruppe(artikel, artikel_gruppe)
         merged = merge_with_month_data(merged_gr, auftraege_filted)
         save_to_excel(merged, "Zusammengefuehrte_Datei.xlsx")
 
         product_counts = count_products_per_month(merged)
-        save_to_excel(product_counts, f"Anzahl_genutzte_Produkte_{YEAR}.xlsx")
-
-        # Top15 pro Monat (für mögliche spätere Auswertungen)
-        top_products = top_products_per_month(product_counts, NUMBER_OF_PRODUCTS)
-        save_to_excel(top_products, f"top{NUMBER_OF_PRODUCTS}_pro_monat_{YEAR}.xlsx")
+        save_to_excel(product_counts, f"Anzahl_genutzte_Produkte_{year}.xlsx")
 
 if __name__ == "__main__":
     main()
